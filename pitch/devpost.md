@@ -16,13 +16,14 @@ Teams find broken web flows after customers complain. AI coding agents can propo
 4. **Gate and patch**: a deterministic safety gate enforces an exact file allowlist, requires `find_text` to occur exactly once, caps the edit size, and blocks scripts, event handlers, external URLs and credential-like strings. The patch goes to the candidate copy only.
 5. **Test**: Daytona runs developer-defined checks (py_compile, Flask route tests). Model-generated shell commands are never executed.
 6. **Verify**: a fresh Anchor session runs the same 3 checks against the candidate preview. Result: 3/3.
-7. **Report**: run_report.json, patch diff, before/after screenshots and per-step timings. Each step is traced to Arize AX via OpenTelemetry/OpenInference.
+7. **Report**: run_report.json, patch diff, before/after screenshots and per-step timings. Each step is traced to Arize AX via OpenTelemetry/OpenInference, and the traces were confirmed in the Arize UI (project `proofloop`).
 
-## Measured results (2 consecutive real runs)
+## Measured results (3 consecutive real runs)
 | Run | Baseline | Candidate | Attempts | Runtime |
 |---|---|---|---|---|
 | 1 | 2/3 | 3/3 | 1 | 34.2 s |
 | 2 | 2/3 | 3/3 | 1 | 41.9 s |
+| 3 | 2/3 | 3/3 | 1 | 38.6 s |
 
 These are 3 test cases on one controlled demo site, not an accuracy benchmark.
 

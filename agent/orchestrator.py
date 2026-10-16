@@ -102,6 +102,9 @@ def run(keep_sandbox: bool = False) -> RunReport:
             with timed("detect"), obs.span("detect", kind="TOOL", browser=rep.browser_provider) as s:
                 before = run_checks(baseline_url, str(ART / "baseline.png"))
                 obs.set_attrs(s, passed=before.passed, total=before.total)
+                obs.finish(s, "baseline preview, 3 acceptance checks",
+                           "; ".join(f"{c.name}={'PASS' if c.passed else 'FAIL'}" for c in before.checks),
+                           before.error is None)
             if before.error:
                 raise RuntimeError(f"baseline browser run failed: {before.error}")
             rep.baseline_passed, rep.baseline_total = before.passed, before.total
@@ -147,6 +150,7 @@ def run(keep_sandbox: bool = False) -> RunReport:
                     record["proposal"] = proposal.__dict__
                     obs.set_attrs(s, root_cause=proposal.root_cause, file_path=proposal.file_path,
                                   confidence=proposal.confidence)
+                    obs.finish(s, json.dumps(evidence["failed_checks"])[:2000], json.dumps(proposal.__dict__), True)
                 log("diagnose", f"[{model}] {proposal.root_cause}")
                 log("diagnose", f"edit {proposal.file_path}: {proposal.find_text!r} -> {proposal.replace_text!r} (conf {proposal.confidence})")
 
@@ -189,6 +193,9 @@ def run(keep_sandbox: bool = False) -> RunReport:
                     rep.candidate_url = redact_url(cand_url)
                     after = run_checks(cand_url, str(ART / "candidate.png"))
                     obs.set_attrs(s, passed=after.passed, total=after.total)
+                    obs.finish(s, "candidate preview, same 3 acceptance checks",
+                               "; ".join(f"{c.name}={'PASS' if c.passed else 'FAIL'}" for c in after.checks),
+                               after.passed == after.total)
                 if after.error:
                     raise RuntimeError(f"candidate browser run failed: {after.error}")
                 rep.candidate_passed, rep.candidate_total = after.passed, after.total
@@ -210,7 +217,16 @@ def run(keep_sandbox: bool = False) -> RunReport:
                     f"BEFORE (baseline) {rep.baseline_passed}/{rep.baseline_total}",
                     f"AFTER (candidate) {rep.candidate_passed}/{rep.candidate_total}")
             obs.set_attrs(root, verified_fix=rep.verified_fix, baseline_passed=rep.baseline_passed,
-                          candidate_passed=rep.candidate_passed)
+                          candidate_passed=rep.candidate_passed, sandbox_id=rep.sandbox_id or "")
+            obs.finish(
+                root,
+                f"QA run on {rep.target_url}: {rep.baseline_passed}/{rep.baseline_total} baseline checks passed; "
+                f"failing: {[c.name for c in failing]}",
+                f"verified_fix={rep.verified_fix} candidate={rep.candidate_passed}/{rep.candidate_total} "
+                f"attempts={rep.patch_attempts} patch_status={rep.safety['patch_status']}\n"
+                + (rep.proposals[-1].get("diff", "") if rep.proposals else ""),
+                rep.verified_fix,
+            )
         except Exception as e:
             rep.errors.append(f"{type(e).__name__}: {e}")
             log("error", rep.errors[-1])

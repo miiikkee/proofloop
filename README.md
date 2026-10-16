@@ -47,12 +47,13 @@ Acceptance checks (`tests/acceptance.py`, fixed by the developer):
 
 ## Results
 
-Two consecutive full runs on 2026-10-16, both with **Anchor Browser** (cloud) + **Daytona** sandbox + **Claude Sonnet 5.5 on Amazon Bedrock**:
+Three consecutive full runs on 2026-10-16, both with **Anchor Browser** (cloud) + **Daytona** sandbox + **Claude Sonnet 5.5 on Amazon Bedrock**:
 
 | Run | Baseline | Candidate | Patch attempts | Verified | Baseline copy modified | Total runtime |
 |---|---|---|---|---|---|---|
 | 1 | 2/3 | 3/3 | 1/2 | yes | no | 34.2 s |
 | 2 | 2/3 | 3/3 | 1/2 | yes | no | 41.9 s |
+| 3 | 2/3 | 3/3 | 1/2 | yes | no | 38.6 s |
 
 Step timings for run 2 (ms): provision 7492 · detect 12927 · diagnose 3131 · patch 783 · sandbox tests 1352 · verify 13422.
 
@@ -66,6 +67,8 @@ Patch it proposed, validated by the safety gate and applied only to the candidat
 ```
 
 ![before and after](artifacts/before_after.png)
+
+Arize AX received one trace per run (project `proofloop`), with per-step spans and Bedrock LLM token counts.
 
 These are results for 3 test cases on one demo site, not an accuracy benchmark. Full record: `artifacts/run_report.json`.
 

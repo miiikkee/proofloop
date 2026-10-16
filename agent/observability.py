@@ -47,6 +47,17 @@ def set_attrs(s, **attrs) -> None:
             s.set_attribute(k, v)
 
 
+def finish(s, input_value: str, output_value: str, ok: bool) -> None:
+    """Fill the Input/Output columns and status shown in the Arize trace list."""
+    if s is None:
+        return
+    from opentelemetry.trace import Status, StatusCode
+
+    s.set_attribute("input.value", input_value)
+    s.set_attribute("output.value", output_value)
+    s.set_status(Status(StatusCode.OK if ok else StatusCode.ERROR))
+
+
 def flush() -> None:
     if _tracer is not None:
         from opentelemetry import trace
