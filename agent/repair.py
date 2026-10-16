@@ -62,11 +62,12 @@ class SandboxRig:
     def _dir(self, copy: str) -> str:
         return f"{self.home}/{copy}"
 
-    def stage(self, copy: str) -> None:
-        for rel in FIXTURE_FILES:
+    def stage(self, copy: str, files: dict[str, str] | None = None) -> None:
+        files = files or {rel: (ROOT / rel).read_text() for rel in FIXTURE_FILES}
+        for rel, text in files.items():
             dest = f"{self._dir(copy)}/{rel.removeprefix('fixture_site/')}"
             self.sandbox.fs.create_folder(dest.rsplit("/", 1)[0], "755")
-            self.sandbox.fs.upload_file((ROOT / rel).read_bytes(), dest)
+            self.sandbox.fs.upload_file(text.encode(), dest)
 
     def install(self) -> None:
         r = self.sandbox.process.exec("pip install -q flask==3.0.3", timeout=180)

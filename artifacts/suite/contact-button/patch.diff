@@ -1,0 +1,11 @@
+--- a/fixture_site/templates/contact.html
++++ b/fixture_site/templates/contact.html
+@@ -12,7 +12,7 @@
+     <input id="email" name="email" type="email" required>
+     <label for="message">Message</label>
+     <textarea id="message" name="message" rows="4" required></textarea>
+-    <button id="send" type="button">Send message</button>
++    <button id="send" type="submit">Send message</button>
+   </form>
+ </body>
+ </html>

@@ -1,0 +1,10 @@
+--- a/fixture_site/templates/index.html
++++ b/fixture_site/templates/index.html
+@@ -6,6 +6,6 @@
+ <body>
+   <h1>Acme Studio</h1>
+   <p>We design friendly websites for small businesses.</p>
+-  <a class="cta" id="contact-link" href="/contact-us">Contact us</a>
++  <a class="cta" id="contact-link" href="/contact">Contact us</a>
+ </body>
+ </html>

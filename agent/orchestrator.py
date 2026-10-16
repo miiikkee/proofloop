@@ -12,6 +12,9 @@ from agent import observability as obs
 from agent.browser import default_provider, run_checks
 from agent.diagnose import propose_patch, provider as llm_provider
 from agent.repair import BASELINE_PORT, CANDIDATE_PORT, SandboxRig
+from agent.repair import FIXTURE_FILES
+from tests.acceptance import CHECK_STEPS
+from agent.scenarios import DEFAULT, SCENARIOS, build_files
 from agent.safety import ALLOWED_FILES, MAX_ATTEMPTS, PatchRejected, apply_patch
 from agent.schemas import RunReport
 
@@ -55,10 +58,12 @@ def _comparison_image(before: str, after: str, out: Path, label_b: str, label_a:
     return str(out.relative_to(ROOT))
 
 
-def run(keep_sandbox: bool = False) -> RunReport:
+def run(keep_sandbox: bool = False, scenario: str = DEFAULT, art: Path = ART) -> RunReport:
     t_start = time.monotonic()
-    ART.mkdir(exist_ok=True)
-    rep = RunReport(run_id=time.strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:6])
+    art.mkdir(parents=True, exist_ok=True)
+    rel = lambda name: str((art / name).relative_to(ROOT))  # noqa: E731
+    site = build_files(scenario, FIXTURE_FILES)
+    rep = RunReport(run_id=time.strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:6], issue_id=scenario)
     rep.browser_provider = default_provider()
     rep.safety = {
         "allowed_files": sorted(ALLOWED_FILES),
@@ -74,7 +79,7 @@ def run(keep_sandbox: bool = False) -> RunReport:
     except Exception as e:  # tracing must never block the QA loop
         tracing = False
         rep.errors.append(f"tracing disabled: {e}")
-    log("init", f"browser={rep.browser_provider} tracing={'arize' if tracing else 'off'} run_id={rep.run_id}")
+    log("init", f"scenario={scenario} browser={rep.browser_provider} tracing={'arize' if tracing else 'off'} run_id={rep.run_id}")
 
     def timed(name):
         class T:
@@ -85,22 +90,22 @@ def run(keep_sandbox: bool = False) -> RunReport:
         return T()
 
     rig = SandboxRig()
-    with obs.span("proofloop.run", run_id=rep.run_id) as root:
+    with obs.span("proofloop.run", run_id=rep.run_id, scenario=scenario) as root:
         try:
             # 1. Provision isolated sandbox with two separate copies.
             with timed("provision"), obs.span("provision", kind="TOOL"):
                 rig.create()
                 rep.sandbox_id = rig.id
                 rig.install()
-                rig.stage("baseline")
-                rig.stage("candidate")
+                rig.stage("baseline", site)
+                rig.stage("candidate", site)
                 baseline_url = rig.serve("baseline", BASELINE_PORT)
             rep.target_url = redact_url(baseline_url)
             log("provision", f"Daytona sandbox {rig.id} ready; baseline served on :{BASELINE_PORT}")
 
             # 2. Detect: baseline acceptance in the browser.
             with timed("detect"), obs.span("detect", kind="TOOL", browser=rep.browser_provider) as s:
-                before = run_checks(baseline_url, str(ART / "baseline.png"))
+                before = run_checks(baseline_url, str(art / "baseline.png"))
                 obs.set_attrs(s, passed=before.passed, total=before.total)
                 obs.finish(s, "baseline preview, 3 acceptance checks",
                            "; ".join(f"{c.name}={'PASS' if c.passed else 'FAIL'}" for c in before.checks),
@@ -109,7 +114,7 @@ def run(keep_sandbox: bool = False) -> RunReport:
                 raise RuntimeError(f"baseline browser run failed: {before.error}")
             rep.baseline_passed, rep.baseline_total = before.passed, before.total
             rep.baseline_checks = _checks_table(before)
-            rep.screenshot_before_path = "artifacts/baseline.png"
+            rep.screenshot_before_path = rel("baseline.png")
             for c in before.checks:
                 log("detect", f"{'PASS' if c.passed else 'FAIL'} {c.name}  {c.detail[:110]}")
             log("detect", f"baseline {before.passed}/{before.total} via {before.provider}")
@@ -122,10 +127,7 @@ def run(keep_sandbox: bool = False) -> RunReport:
                 "browser": before.provider,
                 "failed_checks": [c.__dict__ for c in failing],
                 "passed_checks": [c.name for c in before.checks if c.passed],
-                "test_steps_for_failed_check": [
-                    "goto /contact", "fill #name, #email, #message", "click #send",
-                    "expect text 'Thank you' within 5s",
-                ],
+                "test_steps_for_failed_checks": {c.name: CHECK_STEPS[c.name] for c in failing},
                 "screenshot": rep.screenshot_before_path,
             }
             rep.llm_provider = llm_provider()
@@ -171,8 +173,8 @@ def run(keep_sandbox: bool = False) -> RunReport:
                     diff = "".join(difflib.unified_diff(
                         original.splitlines(True), patched.splitlines(True),
                         f"a/{proposal.file_path}", f"b/{proposal.file_path}"))
-                    (ART / "patch.diff").write_text(diff)
-                    rep.patch_diff_path = "artifacts/patch.diff"
+                    (art / "patch.diff").write_text(diff)
+                    rep.patch_diff_path = rel("patch.diff")
                     record["diff"] = diff
                 log("patch", "applied to sandbox candidate copy (baseline untouched)")
 
@@ -191,7 +193,7 @@ def run(keep_sandbox: bool = False) -> RunReport:
                     # New port per attempt so Flask never serves stale cached templates.
                     cand_url = rig.serve("candidate", CANDIDATE_PORT + attempt - 1)
                     rep.candidate_url = redact_url(cand_url)
-                    after = run_checks(cand_url, str(ART / "candidate.png"))
+                    after = run_checks(cand_url, str(art / "candidate.png"))
                     obs.set_attrs(s, passed=after.passed, total=after.total)
                     obs.finish(s, "candidate preview, same 3 acceptance checks",
                                "; ".join(f"{c.name}={'PASS' if c.passed else 'FAIL'}" for c in after.checks),
@@ -200,7 +202,7 @@ def run(keep_sandbox: bool = False) -> RunReport:
                     raise RuntimeError(f"candidate browser run failed: {after.error}")
                 rep.candidate_passed, rep.candidate_total = after.passed, after.total
                 rep.candidate_checks = _checks_table(after)
-                rep.screenshot_after_path = "artifacts/candidate.png"
+                rep.screenshot_after_path = rel("candidate.png")
                 for c in after.checks:
                     log("verify", f"{'PASS' if c.passed else 'FAIL'} {c.name}  {c.detail[:110]}")
                 log("verify", f"candidate {after.passed}/{after.total} via {after.provider}")
@@ -213,7 +215,7 @@ def run(keep_sandbox: bool = False) -> RunReport:
             rep.safety["patch_status"] = "verified_awaiting_human_approval" if rep.verified_fix else "unverified_discarded"
             if rep.screenshot_before_path and rep.screenshot_after_path:
                 rep.comparison_image_path = _comparison_image(
-                    str(ART / "baseline.png"), str(ART / "candidate.png"), ART / "before_after.png",
+                    str(art / "baseline.png"), str(art / "candidate.png"), art / "before_after.png",
                     f"BEFORE (baseline) {rep.baseline_passed}/{rep.baseline_total}",
                     f"AFTER (candidate) {rep.candidate_passed}/{rep.candidate_total}")
             obs.set_attrs(root, verified_fix=rep.verified_fix, baseline_passed=rep.baseline_passed,
@@ -234,7 +236,7 @@ def run(keep_sandbox: bool = False) -> RunReport:
             # Confirm the reference copy was never modified.
             try:
                 rep.safety["baseline_copy_modified"] = any(
-                    rig.read("baseline", p) != (ROOT / p).read_text() for p in ALLOWED_FILES)
+                    rig.read("baseline", p) != site[p] for p in ALLOWED_FILES)
             except Exception:
                 pass
             if keep_sandbox:
@@ -246,5 +248,5 @@ def run(keep_sandbox: bool = False) -> RunReport:
             if tracing:
                 rep.trace_url = "https://app.arize.com (project: proofloop)"
                 obs.flush()
-            (ART / "run_report.json").write_text(json.dumps(rep.to_dict(), indent=2))
+            (art / "run_report.json").write_text(json.dumps(rep.to_dict(), indent=2))
     return rep

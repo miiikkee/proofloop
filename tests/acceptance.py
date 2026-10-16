@@ -13,8 +13,16 @@ from agent.schemas import CheckResult
 
 STEP_TIMEOUT_MS = 8000
 
+# Human-readable steps per check, passed to the diagnoser as evidence.
+CHECK_STEPS = {
+    "homepage_heading": ["goto /", "expect h1 containing 'Acme Studio'"],
+    "contact_page_reachable": ["goto /", "click #contact-link", "expect form#contact-form with #send"],
+    "contact_submit_thank_you": ["goto /contact", "fill #name, #email, #message", "click #send",
+                                 "expect text 'Thank you' within 5s"],
+}
 
-def _timed(name, fn) -> CheckResult:
+
+def _timed(page, name, fn) -> CheckResult:
     t0 = time.monotonic()
     try:
         detail = fn() or "ok"
@@ -22,6 +30,12 @@ def _timed(name, fn) -> CheckResult:
     except Exception as e:  # assertion or Playwright timeout
         detail = f"{type(e).__name__}: {str(e).splitlines()[0][:300]}"
         passed = False
+        # Record where the user ended up. Path only: preview hostnames carry access tokens.
+        try:
+            h1 = page.locator("h1").first.inner_text(timeout=2000)
+        except Exception:
+            h1 = ""
+        detail += f" | page_path_at_failure={urlparse(page.url).path or '/'} | visible_h1={h1!r}"
     return CheckResult(name, passed, detail, int((time.monotonic() - t0) * 1000))
 
 
@@ -57,15 +71,10 @@ def run_acceptance(page, base_url: str, screenshot_path: str | None = None) -> l
         return "confirmation visible"
 
     results = [
-        _timed("homepage_heading", homepage),
-        _timed("contact_page_reachable", contact_page),
-        _timed("contact_submit_thank_you", contact_submit),
+        _timed(page, "homepage_heading", homepage),
+        _timed(page, "contact_page_reachable", contact_page),
+        _timed(page, "contact_submit_thank_you", contact_submit),
     ]
-    if screenshot_path and not results[2].passed:
-        # Record what the user saw after clicking Send.
-        # Path only: preview hostnames carry access tokens and must not be logged.
-        path = urlparse(page.url).path or "/"
-        results[2].detail += f" | page_path_after_click={path} | visible_h1={page.locator('h1').first.inner_text()!r}"
     return results
 
 

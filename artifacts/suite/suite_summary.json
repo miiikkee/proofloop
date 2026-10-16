@@ -1,0 +1,38 @@
+[
+  {
+    "scenario": "contact-button",
+    "injected_bug": "Send button is type=button, so the form never submits",
+    "baseline": "2/3",
+    "candidate": "3/3",
+    "attempts": 1,
+    "verified_fix": true,
+    "baseline_modified": false,
+    "runtime_s": 34.0,
+    "root_cause": "The Send button in contact.html is declared with type=\"button\", so clicking it never submits the form. The POST to /contact never happens, the page stays on /contact, and the 'Thank you' text never appears.",
+    "errors": []
+  },
+  {
+    "scenario": "broken-nav-link",
+    "injected_bug": "Homepage 'Contact us' link points to a route that does not exist",
+    "baseline": "2/3",
+    "candidate": "3/3",
+    "attempts": 1,
+    "verified_fix": true,
+    "baseline_modified": false,
+    "runtime_s": 34.1,
+    "root_cause": "The homepage 'Contact us' link (#contact-link) points to /contact-us, but the Flask app only defines a GET route at /contact, so the click lands on a 404 'Not Found' page.",
+    "errors": []
+  },
+  {
+    "scenario": "wrong-form-action",
+    "injected_bug": "Contact form posts to a route that does not exist",
+    "baseline": "2/3",
+    "candidate": "3/3",
+    "attempts": 1,
+    "verified_fix": true,
+    "baseline_modified": false,
+    "runtime_s": 29.0,
+    "root_cause": "The contact form posts to /send-message, but the Flask app only defines POST /contact. The request returns 404 'Not Found', so the thank-you page never renders.",
+    "errors": []
+  }
+]

@@ -70,7 +70,20 @@ Patch it proposed, validated by the safety gate and applied only to the candidat
 
 Arize AX received one trace per run (project `proofloop`), with per-step spans and Bedrock LLM token counts.
 
-These are results for 3 test cases on one demo site, not an accuracy benchmark. Full record: `artifacts/run_report.json`.
+
+### Multi-scenario suite (`python app.py --scenario all`)
+
+Three different injected bugs, each in a fresh Daytona sandbox, verified by Anchor. The diagnosing model only sees the resulting site files, never the scenario definitions in `agent/scenarios.py`.
+
+| Scenario | Injected bug | Failing check | Model's fix | Baseline | Candidate | Attempts | Runtime |
+|---|---|---|---|---|---|---|---|
+| contact-button | Send button is `type="button"` | contact_submit_thank_you | `type="button"` → `type="submit"` | 2/3 | 3/3 | 1 | 34.0 s |
+| broken-nav-link | Homepage link points to `/contact-us` (404) | contact_page_reachable | `href="/contact-us"` → `href="/contact"` | 2/3 | 3/3 | 1 | 34.1 s |
+| wrong-form-action | Form posts to `/send-message` (404) | contact_submit_thank_you | `action="/send-message"` → `action="/contact"` | 2/3 | 3/3 | 1 | 29.0 s |
+
+**Suite result: 3/3 scenarios verified fixed**, each on the first attempt, with the baseline copy unmodified. Per-scenario reports, diffs and screenshots: `artifacts/suite/<scenario>/`; summary: `artifacts/suite/suite_summary.json`.
+
+These are results for 3 acceptance checks × 3 scenarios on one demo site, not an accuracy benchmark. Full record: `artifacts/run_report.json`.
 
 
 ## Safety controls
@@ -91,7 +104,8 @@ pip install -r requirements.txt
 python -m playwright install chromium
 cp .env.example .env    # fill DAYTONA_API_KEY, ANCHOR_API_KEY, LLM credentials (AWS Bedrock, Anthropic or OpenAI), optional ARIZE_*
 python -m pytest -q tests/test_safety.py
-python app.py           # full loop; add --keep-sandbox to keep previews up for a live demo
+python app.py                   # full loop on the default bug; --keep-sandbox keeps previews up
+python app.py --scenario all    # 3 injected-bug scenarios, each in a fresh sandbox
 ```
 
 Local-only fixture check (no keys needed):
@@ -105,7 +119,7 @@ Without `ANCHOR_API_KEY` the browser step falls back to local Playwright, and th
 
 ## Limitations
 
-- One controlled bug on one demo site; pass counts are test-case results, not accuracy claims.
+- Three controlled single-bug scenarios on one demo site; pass counts are test-case results, not accuracy claims.
 - Text-only evidence to the LLM (screenshot is saved but not sent to the model).
 - Single-file, find/replace edits only.
 

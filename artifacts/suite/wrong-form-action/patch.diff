@@ -1,0 +1,11 @@
+--- a/fixture_site/templates/contact.html
++++ b/fixture_site/templates/contact.html
+@@ -5,7 +5,7 @@
+ </head>
+ <body>
+   <h1>Contact us</h1>
+-  <form id="contact-form" method="post" action="/send-message">
++  <form id="contact-form" method="post" action="/contact">
+     <label for="name">Name</label>
+     <input id="name" name="name" required>
+     <label for="email">Email</label>

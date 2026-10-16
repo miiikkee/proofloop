@@ -25,7 +25,9 @@ Teams find broken web flows after customers complain. AI coding agents can propo
 | 2 | 2/3 | 3/3 | 1 | 41.9 s |
 | 3 | 2/3 | 3/3 | 1 | 38.6 s |
 
-These are 3 test cases on one controlled demo site, not an accuracy benchmark.
+**Multi-scenario suite**: three different injected bugs (a non-submitting button, a broken nav link, a wrong form action), each in a fresh sandbox. **3/3 verified fixed**, all on the first attempt (34.0 s, 34.1 s, 29.0 s). The model never sees which bug was injected.
+
+These are 3 acceptance checks × 3 scenarios on one controlled demo site, not an accuracy benchmark.
 
 ## Sponsor tools and how we used them
 - **Daytona**: ephemeral sandbox, two isolated copies (baseline and candidate), fixed-command execution, signed and expiring preview URLs that make the sandboxed sites reachable by a cloud browser, and automatic deletion after the run.
@@ -37,7 +39,7 @@ These are 3 test cases on one controlled demo site, not an accuracy benchmark.
 Exact file allowlist · find_text must match exactly once · 300-character edit cap · no scripts, handlers, external URLs or secrets · maximum 2 attempts · no model-generated shell commands · the baseline copy is never modified (checked on every run) · preview tokens are redacted from logs · no auto-merge, push or deploy: a verified patch waits for human approval · 16 unit tests for the safety gate.
 
 ## Limitations (disclosed)
-One intentionally broken demo site with one controlled bug (a contact form button with `type="button"`). Single-file find/replace patches only. Screenshots are saved as evidence but not sent to the model.
+One demo site with three controlled single-bug scenarios (button type, nav link, form action). Single-file find/replace patches only. Screenshots are saved as evidence but not sent to the model.
 
 ## What's next
 Run on every preview deploy in CI, support multi-file patches with a review UI, and use SurrealDB agent memory to recall verified fixes for repeat bugs.
