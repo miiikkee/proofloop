@@ -3,163 +3,209 @@
 <head>
 <meta charset="utf-8">
 <title>ProofLoop Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#ffffff; --ink:#16181d; --muted:#5b6170; --line:#c9ced8;
-    --daytona:#1f6feb; --anchor:#0f9d75; --llm:#8a4bd6; --gate:#d9480f; --surreal:#c2255c; --arize:#5c6ac4;
-    --ok:#2b8a3e; --bad:#c92a2a;
+    --bg:#f6f7fb; --card:#ffffff; --ink:#0f172a; --muted:#5b6475; --soft:#94a3b8; --hair:#e4e7ee;
+    --daytona:#2563eb; --anchor:#0d9488; --surreal:#db2777; --claude:#d97706; --gate:#334155; --arize:#6d28d9;
+    --ok:#16a34a; --bad:#dc2626;
   }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
-  .page{width:1400px;padding:36px 44px 40px}
-  h1{margin:0;font-size:30px;letter-spacing:-.3px}
-  .tag{color:var(--muted);margin:4px 0 22px;font-size:16px}
-  .wrap{display:grid;grid-template-columns:1fr 250px;gap:22px}
-  .flow{position:relative}
-  .row{display:flex;align-items:stretch;gap:14px}
-  .step{flex:1;border:1.5px solid var(--line);border-left:6px solid var(--c);border-radius:10px;padding:10px 14px;background:#fff}
-  .step .h{display:flex;align-items:center;gap:10px;font-weight:650;font-size:16px}
-  .num{width:24px;height:24px;border-radius:50%;background:var(--c);color:#fff;font-size:13px;display:grid;place-items:center;flex:none}
-  .tool{margin-left:auto;font-size:12px;font-weight:650;color:var(--c);border:1.5px solid var(--c);border-radius:999px;padding:1px 9px}
-  .step p{margin:4px 0 0 34px;color:var(--muted);font-size:13.5px}
-  .step code{font:12.5px ui-monospace,Menlo,monospace;background:#f2f4f8;padding:1px 5px;border-radius:4px;color:var(--ink)}
-  .arrow{height:22px;display:flex;justify-content:center}
-  .arrow svg{display:block}
-  .split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .side{border:1.5px dashed var(--c);border-radius:10px;padding:10px 14px;background:color-mix(in srgb,var(--c) 6%,#fff);font-size:13.5px}
-  .side b{color:var(--c)}
-  .pill{display:inline-block;font-weight:700;border-radius:6px;padding:0 7px;color:#fff;font-size:13px}
-  .ok{background:var(--ok)} .bad{background:var(--bad)}
-  .rail{border:1.5px solid var(--arize);border-radius:12px;padding:14px;background:color-mix(in srgb,var(--arize) 6%,#fff)}
-  .rail h3{margin:0 0 6px;color:var(--arize);font-size:16px}
-  .rail ul{margin:0;padding-left:18px;color:var(--muted);font-size:13.5px}
-  .rail li{margin:2px 0}
-  .box{border:1.5px solid var(--line);border-radius:12px;padding:14px;margin-top:16px}
-  .box h3{margin:0 0 8px;font-size:16px}
-  table{border-collapse:collapse;width:100%;font-size:13px}
-  td,th{padding:4px 2px;text-align:left;border-bottom:1px solid #eceef2}
-  th{color:var(--muted);font-weight:600}
-  .rules{font-size:13px;color:var(--muted);margin:0;padding-left:18px}
-  .rules li{margin:2px 0}
-  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:18px;font-size:12.5px;color:var(--muted)}
-  .legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--c);margin-right:6px;vertical-align:-1px}
+  *{box-sizing:border-box;margin:0}
+  body{background:var(--bg);font-family:Inter,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;color:var(--ink)}
+  .canvas{position:relative;width:1920px;height:1080px;overflow:hidden;
+    background:
+      radial-gradient(1200px 500px at 85% -10%, rgba(37,99,235,.07), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(13,148,136,.07), transparent 60%),
+      var(--bg);}
+  .abs{position:absolute}
+
+  /* header */
+  .eyebrow{left:72px;top:44px;font-size:14px;letter-spacing:.18em;font-weight:600;color:var(--soft)}
+  .title{left:72px;top:66px;font-size:60px;font-weight:800;letter-spacing:-1.5px;line-height:1}
+  .title span{color:var(--soft);font-weight:600;letter-spacing:-1px}
+  .sub{left:72px;top:142px;font-size:21px;color:var(--muted);font-weight:500}
+  .sub b{color:var(--ink)}
+  .legend{right:72px;top:52px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;width:640px}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:600;color:var(--c);
+    background:color-mix(in srgb,var(--c) 9%,#fff);border:1px solid color-mix(in srgb,var(--c) 28%,#fff);
+    padding:5px 11px;border-radius:999px}
+  .chip::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c)}
+
+  /* cards */
+  .card{width:360px;height:170px;background:var(--card);border-radius:18px;padding:18px 20px 16px;
+    border:1px solid var(--hair);box-shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px -8px rgba(15,23,42,.12);overflow:hidden}
+  .card::before{content:"";position:absolute;left:0;top:0;right:0;height:5px;background:var(--c)}
+  .head{display:flex;align-items:center;gap:11px}
+  .n{width:30px;height:30px;border-radius:9px;background:var(--c);color:#fff;font-weight:700;font-size:15px;display:grid;place-items:center;flex:none}
+  .t{font-size:21px;font-weight:700;letter-spacing:-.3px}
+  .tool{margin-top:9px;font-size:13px;font-weight:600;color:var(--c);text-transform:uppercase;letter-spacing:.06em}
+  .d{margin-top:6px;font-size:15px;line-height:1.42;color:var(--muted)}
+  .d code{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;color:var(--ink);background:#f1f3f8;padding:1px 5px;border-radius:5px}
+  .badge{position:absolute;right:16px;top:18px;font-weight:800;font-size:17px;color:#fff;padding:3px 10px;border-radius:8px}
+  .bad{background:var(--bad)} .ok{background:var(--ok)}
+
+  /* principle panel */
+  .principle{left:72px;top:394px;width:610px;height:142px;border-radius:18px;background:#0f172a;color:#fff;padding:18px 22px;
+    box-shadow:0 10px 30px -10px rgba(15,23,42,.45)}
+  .principle h3{font-size:22px;font-weight:800;letter-spacing:-.3px}
+  .principle h3 em{font-style:normal;color:#fbbf24;font-size:28px;font-weight:700;margin:0 6px;vertical-align:-1px}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:10px;font-size:14.5px;line-height:1.55}
+  .cols .k{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:2px}
+  .cols .p .k{color:#fbbf24} .cols .j .k{color:#5eead4}
+  .cols div{color:#cbd5e1}
+
+  /* labels on arrows */
+  .lbl{font-size:14px;font-weight:600;color:var(--bad);background:var(--bg);padding:2px 8px;border-radius:6px;white-space:nowrap}
+  .lbl.g{color:var(--ok)}
+
+  /* arize band */
+  .arize{left:72px;top:768px;width:1776px;height:66px;border-radius:16px;display:flex;align-items:center;gap:18px;padding:0 24px;
+    background:linear-gradient(90deg,color-mix(in srgb,var(--arize) 12%,#fff),color-mix(in srgb,var(--arize) 5%,#fff));
+    border:1px solid color-mix(in srgb,var(--arize) 25%,#fff)}
+  .arize .name{font-weight:800;color:var(--arize);font-size:18px;white-space:nowrap}
+  .spans{display:flex;gap:8px;flex-wrap:nowrap}
+  .span{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;color:var(--arize);background:#fff;border:1px solid color-mix(in srgb,var(--arize) 25%,#fff);padding:4px 9px;border-radius:7px}
+  .arize .rest{margin-left:auto;color:var(--muted);font-size:14px;white-space:nowrap}
+
+  /* results */
+  .results{left:72px;top:864px;width:1776px;display:grid;grid-template-columns:repeat(3,1fr) 1.05fr 1.05fr;gap:16px}
+  .r{background:#fff;border:1px solid var(--hair);border-radius:16px;padding:14px 18px;height:116px;box-shadow:0 6px 18px -10px rgba(15,23,42,.15)}
+  .r .k{font-size:12.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--soft)}
+  .r .v{margin-top:6px;font-size:16px;font-weight:600}
+  .r .v code{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:14px;background:#f1f3f8;padding:1px 5px;border-radius:5px}
+  .r .m{margin-top:8px;display:flex;align-items:center;gap:10px;font-size:15px;color:var(--muted)}
+  .pass{font-weight:800;font-size:20px}
+  .pass .a{color:var(--bad)} .pass .b{color:var(--ok)}
+  .big{font-size:34px;font-weight:800;letter-spacing:-1px;margin-top:4px}
+  .foot{left:72px;top:1006px;width:1776px;display:flex;justify-content:space-between;font-size:14px;color:var(--soft)}
 </style>
 </head>
 <body>
-<div class="page">
-  <h1>ProofLoop: find it, fix it, prove it</h1>
-  <div class="tag">A fix is accepted only on independent browser evidence, never on the model's confidence.</div>
+<div class="canvas">
 
-  <div class="wrap">
-    <div class="flow">
+  <!-- header -->
+  <div class="abs eyebrow">DAYTONA HACKSPRINT · NYC · OCT 2026</div>
+  <div class="abs title">ProofLoop <span>find it, fix it, prove it.</span></div>
+  <div class="abs sub">An AI fix is accepted only on independent evidence. <b>The agent that proposes a fix never decides whether it worked.</b></div>
+  <div class="abs legend">
+    <span class="chip" style="--c:var(--daytona)">Daytona</span>
+    <span class="chip" style="--c:var(--anchor)">Anchor Browser</span>
+    <span class="chip" style="--c:var(--surreal)">SurrealDB</span>
+    <span class="chip" style="--c:var(--claude)">Claude · AWS Bedrock</span>
+    <span class="chip" style="--c:var(--arize)">Arize AX</span>
+    <span class="chip" style="--c:var(--gate)">Deterministic code</span>
+  </div>
 
-      <div class="row"><div class="step" style="--c:#16181d">
-        <div class="h"><span class="num">0</span>Operator runs <code>python app.py --scenario all</code><span class="tool">CLI</span></div>
-        <p>Orchestrator state machine with safety gates, max 2 attempts, per-step timeouts</p>
-      </div></div>
-      <div class="arrow"><svg width="16" height="22"><path d="M8 0v15" stroke="#9aa1ad" stroke-width="2"/><path d="M2 13l6 8 6-8z" fill="#9aa1ad"/></svg></div>
+  <!-- connectors -->
+  <svg class="abs" style="left:0;top:0" width="1920" height="1080">
+    <defs>
+      <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/></marker>
+      <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#dc2626"/></marker>
+      <marker id="ag" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#16a34a"/></marker>
+    </defs>
+    <g stroke="#94a3b8" stroke-width="3" fill="none" stroke-linecap="round" marker-end="url(#ah)">
+      <path d="M444,285 L534,285"/>
+      <path d="M916,285 L1006,285"/>
+      <path d="M1388,285 L1478,285"/>
+      <path d="M1852,285 C1906,285 1906,645 1858,645"/>
+      <path d="M1482,645 L1390,645"/>
+      <path d="M1010,645 L918,645"/>
+    </g>
+    <path d="M538,645 L446,645" stroke="#16a34a" stroke-width="3.5" fill="none" stroke-linecap="round" marker-end="url(#ag)"/>
+    <g stroke="#dc2626" stroke-width="2.5" fill="none" stroke-dasharray="7 7" stroke-linecap="round" marker-end="url(#ar)">
+      <path d="M1700,552 L1700,384"/>
+      <path d="M724,552 L724,466 Q724,460 730,460 L1622,460 Q1628,460 1628,454 L1628,384"/>
+    </g>
+  </svg>
 
-      <div class="row"><div class="step" style="--c:var(--daytona)">
-        <div class="h"><span class="num">1</span>Provision isolated sandbox<span class="tool">Daytona</span></div>
-        <p>Ephemeral sandbox · <b>baseline copy</b> <code>:3000</code> and <b>candidate copy</b> <code>:3001</code>, kept separate · each behind a signed, expiring preview URL</p>
-      </div></div>
-      <div class="arrow"><svg width="16" height="22"><path d="M8 0v15" stroke="#9aa1ad" stroke-width="2"/><path d="M2 13l6 8 6-8z" fill="#9aa1ad"/></svg></div>
+  <!-- top row: 1 → 4 -->
+  <div class="abs card" style="--c:var(--daytona);left:72px;top:200px">
+    <div class="head"><span class="n">1</span><span class="t">Isolate</span></div>
+    <div class="tool">Daytona sandbox</div>
+    <div class="d">Two separate copies: <b>baseline</b> (never modified) and <b>candidate</b>, each behind a signed, expiring preview URL.</div>
+  </div>
+  <div class="abs card" style="--c:var(--anchor);left:544px;top:200px">
+    <span class="badge bad">2/3</span>
+    <div class="head"><span class="n">2</span><span class="t">Reproduce</span></div>
+    <div class="tool">Anchor cloud browser</div>
+    <div class="d">Runs 3 developer-written checks on the baseline. Clicking Send never shows "Thank you".</div>
+  </div>
+  <div class="abs card" style="--c:var(--surreal);left:1016px;top:200px">
+    <div class="head"><span class="n">3</span><span class="t">Recall</span></div>
+    <div class="tool">SurrealDB Agent Memory</div>
+    <div class="d">Earlier verified and failed fixes for this symptom, each traceable to its run, passed in as <b>untrusted hints</b>.</div>
+  </div>
+  <div class="abs card" style="--c:var(--claude);left:1488px;top:200px">
+    <div class="head"><span class="n">4</span><span class="t">Propose</span></div>
+    <div class="tool">Claude Sonnet 5.5 · Bedrock</div>
+    <div class="d">Evidence + allowlisted source → JSON patch: <code>root_cause</code> <code>find</code> → <code>replace</code> <code>confidence</code></div>
+  </div>
 
-      <div class="row"><div class="step" style="--c:var(--anchor)">
-        <div class="h"><span class="num">2</span>Detect: run 3 fixed acceptance checks on baseline<span class="tool">Anchor Browser</span></div>
-        <p>Cloud Chromium via Playwright-over-CDP · homepage · contact page · submit shows "Thank you" → <span class="pill bad">2/3</span> + screenshot + failure evidence</p>
-      </div></div>
-      <div class="arrow"><svg width="16" height="22"><path d="M8 0v15" stroke="#9aa1ad" stroke-width="2"/><path d="M2 13l6 8 6-8z" fill="#9aa1ad"/></svg></div>
+  <!-- bottom row: 5 ← 8 -->
+  <div class="abs card" style="--c:var(--gate);left:1488px;top:560px">
+    <div class="head"><span class="n">5</span><span class="t">Gate</span></div>
+    <div class="tool">Deterministic code, outside the LLM</div>
+    <div class="d">Allowlisted file · exactly one match · ≤ 300 chars · no scripts, URLs or secrets.</div>
+  </div>
+  <div class="abs card" style="--c:var(--daytona);left:1016px;top:560px">
+    <div class="head"><span class="n">6</span><span class="t">Patch &amp; test</span></div>
+    <div class="tool">Daytona sandbox</div>
+    <div class="d">Candidate copy only. Fixed developer commands only; model-generated shell never runs.</div>
+  </div>
+  <div class="abs card" style="--c:var(--anchor);left:544px;top:560px">
+    <span class="badge ok">3/3</span>
+    <div class="head"><span class="n">7</span><span class="t">Verify</span></div>
+    <div class="tool">Anchor cloud browser</div>
+    <div class="d">Fresh session, the same 3 checks, unchanged by the agent. The browser decides, not the model.</div>
+  </div>
+  <div class="abs card" style="--c:var(--surreal);left:72px;top:560px">
+    <div class="head"><span class="n">8</span><span class="t">Remember &amp; hand off</span></div>
+    <div class="tool">SurrealDB → human approval</div>
+    <div class="d">Store the verified fix (supersedes failed tries). Report, diff and screenshots wait for a person. No auto-merge.</div>
+  </div>
 
-      <div class="row"><div class="step" style="--c:var(--surreal)">
-        <div class="h"><span class="num">3</span>Recall prior outcomes for this symptom<span class="tool">SurrealDB Agent Memory</span></div>
-        <p>Verified and failed fixes from earlier runs, each traceable to its run id · passed to the model as <i>untrusted hints</i></p>
-      </div></div>
-      <div class="arrow"><svg width="16" height="22"><path d="M8 0v15" stroke="#9aa1ad" stroke-width="2"/><path d="M2 13l6 8 6-8z" fill="#9aa1ad"/></svg></div>
+  <!-- arrow labels -->
+  <div class="abs lbl" style="left:1716px;top:452px">rejected → retry</div>
+  <div class="abs lbl" style="left:900px;top:446px">still failing → reset candidate, retry · max 2 attempts</div>
+  <div class="abs lbl g" style="left:452px;top:612px">verified</div>
 
-      <div class="row"><div class="step" style="--c:var(--llm)">
-        <div class="h"><span class="num">4</span>Diagnose and propose a patch<span class="tool">Claude Sonnet 5.5 · AWS Bedrock</span></div>
-        <p>Input: browser evidence + allowlisted templates + read-only backend · Output: JSON <code>{root_cause, file_path, find_text, replace_text, reason, confidence}</code></p>
-      </div></div>
-      <div class="arrow"><svg width="16" height="22"><path d="M8 0v15" stroke="#9aa1ad" stroke-width="2"/><path d="M2 13l6 8 6-8z" fill="#9aa1ad"/></svg></div>
-
-      <div class="row">
-        <div class="step" style="--c:var(--gate);flex:1.25">
-          <div class="h"><span class="num">5</span>Safety gate (deterministic, outside the LLM)<span class="tool">Code</span></div>
-          <p>Exact file allowlist · <code>find_text</code> occurs exactly once · ≤300 chars · no scripts, handlers, external URLs or secrets</p>
-        </div>
-        <div class="side" style="--c:var(--bad);flex:.75"><b>Rejected →</b> store as "do not repeat" in SurrealDB, feed the reason back, retry (attempt 2 of 2)</div>
-      </div>
-      <div class="arrow"><svg width="16" height="22"><path d="M8 0v15" stroke="#9aa1ad" stroke-width="2"/><path d="M2 13l6 8 6-8z" fill="#9aa1ad"/></svg></div>
-
-      <div class="row"><div class="step" style="--c:var(--daytona)">
-        <div class="h"><span class="num">6</span>Patch the candidate copy only and run fixed tests<span class="tool">Daytona</span></div>
-        <p>Baseline is never touched · developer-defined commands only (<code>py_compile</code>, Flask route tests) · no model-generated shell</p>
-      </div></div>
-      <div class="arrow"><svg width="16" height="22"><path d="M8 0v15" stroke="#9aa1ad" stroke-width="2"/><path d="M2 13l6 8 6-8z" fill="#9aa1ad"/></svg></div>
-
-      <div class="row"><div class="step" style="--c:var(--anchor)">
-        <div class="h"><span class="num">7</span>Verify independently on the candidate preview<span class="tool">Anchor Browser</span></div>
-        <p>Fresh cloud browser session · the same 3 checks, unchanged by the agent</p>
-      </div></div>
-      <div class="arrow"><svg width="16" height="22"><path d="M8 0v15" stroke="#9aa1ad" stroke-width="2"/><path d="M2 13l6 8 6-8z" fill="#9aa1ad"/></svg></div>
-
-      <div class="split">
-        <div class="side" style="--c:var(--ok)"><b>All 3 pass <span class="pill ok">3/3</span></b><br>Store a <b style="color:var(--surreal)">verified fix</b> in SurrealDB (supersedes failed attempts) → report, diff, before/after screenshots → status <code>verified_awaiting_human_approval</code>. No auto-merge, no deploy.</div>
-        <div class="side" style="--c:var(--bad)"><b>Still failing</b><br>Store as <b style="color:var(--surreal)">failed fix</b> → reset candidate to baseline → retry with failure context. After 2 attempts: <code>unverified_discarded</code>.</div>
-      </div>
-      <div class="arrow"><svg width="16" height="22"><path d="M8 0v15" stroke="#9aa1ad" stroke-width="2"/><path d="M2 13l6 8 6-8z" fill="#9aa1ad"/></svg></div>
-
-      <div class="row"><div class="step" style="--c:#16181d">
-        <div class="h"><span class="num">8</span>Cleanup and evidence<span class="tool">Report</span></div>
-        <p>Signed URLs expired · sandbox deleted · <code>run_report.json</code> with real pass counts, timings, <code>baseline_copy_modified=false</code></p>
-      </div></div>
-    </div>
-
-    <div>
-      <div class="rail">
-        <h3>Arize AX: traces every step</h3>
-        <ul>
-          <li>One trace per run via OpenTelemetry / OpenInference</li>
-          <li>Spans: provision · detect · memory.recall · diagnose · patch · test · verify · memory.remember</li>
-          <li>Bedrock LLM calls with token counts</li>
-          <li>Daytona SDK calls auto-traced</li>
-          <li>Run input/output and OK/ERROR status</li>
-        </ul>
-      </div>
-
-      <div class="box">
-        <h3>Measured (real runs, 16 Oct 2026)</h3>
-        <table>
-          <tr><th>Injected bug</th><th>Before</th><th>After</th></tr>
-          <tr><td>button type</td><td>2/3</td><td><b style="color:var(--ok)">3/3</b></td></tr>
-          <tr><td>nav link 404</td><td>2/3</td><td><b style="color:var(--ok)">3/3</b></td></tr>
-          <tr><td>form action 404</td><td>2/3</td><td><b style="color:var(--ok)">3/3</b></td></tr>
-        </table>
-        <p style="margin:8px 0 0;font-size:13px;color:var(--muted)">Fixed on the 1st attempt each time · ~30–45 s per run · 3 checks × 3 scenarios on one demo site; not a benchmark.</p>
-      </div>
-
-      <div class="box">
-        <h3>Guardrails</h3>
-        <ul class="rules">
-          <li>Baseline and candidate always separate</li>
-          <li>Checks written by the developer, never by the model</li>
-          <li>Memory is a hint, not an authority</li>
-          <li>Page text and memory treated as untrusted</li>
-          <li>Preview tokens redacted from logs</li>
-          <li>A person approves before any adoption</li>
-        </ul>
-      </div>
+  <!-- principle -->
+  <div class="abs principle">
+    <h3>Proposer <em>≠</em> Judge</h3>
+    <div class="cols">
+      <div class="p"><div class="k">Proposes (untrusted)</div>
+        <div>Claude's patch · memory hints · page text</div></div>
+      <div class="j"><div class="k">Decides (independent)</div>
+        <div>Developer checks · deterministic gate · fresh browser</div></div>
     </div>
   </div>
 
-  <div class="legend">
-    <span style="--c:var(--daytona)">Daytona</span>
-    <span style="--c:var(--anchor)">Anchor Browser</span>
-    <span style="--c:var(--surreal)">SurrealDB</span>
-    <span style="--c:var(--llm)">Claude on AWS Bedrock</span>
-    <span style="--c:var(--gate)">Safety gate</span>
-    <span style="--c:var(--arize)">Arize AX</span>
+  <!-- arize band -->
+  <div class="abs arize">
+    <span class="name">Arize AX traces every step</span>
+    <div class="spans">
+      <span class="span">provision</span><span class="span">detect</span><span class="span">memory.recall</span><span class="span">diagnose</span>
+      <span class="span">patch</span><span class="span">test</span><span class="span">verify</span><span class="span">memory.remember</span>
+    </div>
+    <span class="rest">+ Daytona SDK calls · Bedrock tokens · OK/ERROR status</span>
+  </div>
+
+  <!-- results -->
+  <div class="abs results">
+    <div class="r"><div class="k">Planted bug 1</div><div class="v">Send button <code>type="button"</code></div>
+      <div class="m"><span class="pass"><span class="a">2/3</span> → <span class="b">3/3</span></span> · 1st attempt · 34.0 s</div></div>
+    <div class="r"><div class="k">Planted bug 2</div><div class="v">Nav link → <code>/contact-us</code> 404</div>
+      <div class="m"><span class="pass"><span class="a">2/3</span> → <span class="b">3/3</span></span> · 1st attempt · 34.1 s</div></div>
+    <div class="r"><div class="k">Planted bug 3</div><div class="v">Form posts → <code>/send-message</code> 404</div>
+      <div class="m"><span class="pass"><span class="a">2/3</span> → <span class="b">3/3</span></span> · 1st attempt · 29.0 s</div></div>
+    <div class="r"><div class="k">Baseline copy modified</div><div class="big" style="color:var(--ok)">0 times</div></div>
+    <div class="r"><div class="k">Memory on repeat run</div><div class="v" style="margin-top:10px">Top hit = the earlier verified fix, traceable to its run id</div></div>
+  </div>
+
+  <div class="abs foot">
+    <span>Real runs on Oct 16, 2026 · 3 checks × 3 planted bugs on one demo site · not a benchmark</span>
+    <span>github.com/miiikkee/proofloop</span>
   </div>
 </div>
 </body>
