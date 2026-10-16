@@ -30,7 +30,7 @@ CLI (python app.py)
 |---|---|---|
 | Provision | **Daytona** Python SDK | One ephemeral sandbox, two separate copies of the site, each served on its own port behind an expiring signed preview URL (1h) |
 | Detect | **Anchor Browser** + Playwright over CDP | Cloud browser runs 3 acceptance checks against the baseline preview |
-| Diagnose | LLM (Anthropic or OpenAI) | Gets failing-check evidence + allowlisted template source + read-only backend; page text is treated as untrusted data |
+| Diagnose | Claude on **Amazon Bedrock** (or Anthropic / OpenAI API) | Gets failing-check evidence + allowlisted template source + read-only backend; page text is treated as untrusted data |
 | Patch | `agent/safety.py` | Proposal is validated, then written to the **candidate** copy only |
 | Test | Daytona `process.exec` | Developer-defined commands only (no model-generated shell) |
 | Verify | **Anchor Browser** | Same 3 checks, fresh session, against the candidate preview |
@@ -47,7 +47,28 @@ Acceptance checks (`tests/acceptance.py`, fixed by the developer):
 
 ## Results
 
-<!-- RESULTS -->
+Two consecutive full runs on 2026-10-16, both with **Anchor Browser** (cloud) + **Daytona** sandbox + **Claude Sonnet 5.5 on Amazon Bedrock**:
+
+| Run | Baseline | Candidate | Patch attempts | Verified | Baseline copy modified | Total runtime |
+|---|---|---|---|---|---|---|
+| 1 | 2/3 | 3/3 | 1/2 | yes | no | 34.2 s |
+| 2 | 2/3 | 3/3 | 1/2 | yes | no | 41.9 s |
+
+Step timings for run 2 (ms): provision 7492 · detect 12927 · diagnose 3131 · patch 783 · sandbox tests 1352 · verify 13422.
+
+Model's diagnosis (run 1, verbatim): *"The Send button in contact.html is declared with type="button", so clicking it does not submit the form. The page stays on /contact and the POST handler that renders the 'Thank you' page is never reached."* (confidence 0.97)
+
+Patch it proposed, validated by the safety gate and applied only to the candidate copy:
+
+```diff
+-    <button id="send" type="button">Send message</button>
++    <button id="send" type="submit">Send message</button>
+```
+
+![before and after](artifacts/before_after.png)
+
+These are results for 3 test cases on one demo site, not an accuracy benchmark. Full record: `artifacts/run_report.json`.
+
 
 ## Safety controls
 
@@ -65,7 +86,7 @@ Acceptance checks (`tests/acceptance.py`, fixed by the developer):
 ```bash
 pip install -r requirements.txt
 python -m playwright install chromium
-cp .env.example .env    # fill DAYTONA_API_KEY, ANCHOR_API_KEY, one LLM key, optional ARIZE_*
+cp .env.example .env    # fill DAYTONA_API_KEY, ANCHOR_API_KEY, LLM credentials (AWS Bedrock, Anthropic or OpenAI), optional ARIZE_*
 python -m pytest -q tests/test_safety.py
 python app.py           # full loop; add --keep-sandbox to keep previews up for a live demo
 ```

@@ -25,7 +25,26 @@ def provider() -> str:
         return "anthropic"
     if os.environ.get("OPENAI_API_KEY"):
         return "openai"
-    raise RuntimeError("No LLM key: set ANTHROPIC_API_KEY or OPENAI_API_KEY in .env")
+    if os.environ.get("AWS_ACCESS_KEY_ID") or os.environ.get("AWS_PROFILE"):
+        return "bedrock"
+    raise RuntimeError("No LLM credentials: set ANTHROPIC_API_KEY, OPENAI_API_KEY, or AWS credentials in .env")
+
+
+def bedrock_model_id(client=None) -> str:
+    """Use BEDROCK_MODEL_ID if set, else the newest Claude inference profile the account can see."""
+    if os.environ.get("BEDROCK_MODEL_ID"):
+        return os.environ["BEDROCK_MODEL_ID"]
+    import boto3
+
+    bedrock = boto3.client("bedrock", region_name=os.environ.get("AWS_REGION", "us-east-1"))
+    ids = [p["inferenceProfileId"] for p in bedrock.list_inference_profiles()["inferenceProfileSummaries"]
+           if "anthropic.claude" in p["inferenceProfileId"]]
+    ids += [m["modelId"] for m in bedrock.list_foundation_models(byProvider="anthropic")["modelSummaries"]
+            if "ON_DEMAND" in m.get("inferenceTypesSupported", [])]
+    if not ids:
+        raise RuntimeError("No Claude model visible in Bedrock for this account/region")
+    prefer = [i for i in ids if "sonnet" in i] or ids
+    return sorted(prefer)[-1]
 
 
 def build_prompt(evidence: dict, editable: dict[str, str], readonly: dict[str, str], prior_failures: list[str]) -> str:
@@ -59,6 +78,16 @@ def _call(prompt: str) -> tuple[str, str]:
             messages=[{"role": "user", "content": prompt}],
         )
         return "".join(b.text for b in msg.content if b.type == "text"), f"anthropic:{model}"
+    if prov == "bedrock":
+        import boto3
+
+        model = bedrock_model_id()
+        resp = boto3.client("bedrock-runtime", region_name=os.environ.get("AWS_REGION", "us-east-1")).converse(
+            modelId=model, system=[{"text": SYSTEM}],
+            messages=[{"role": "user", "content": [{"text": prompt}]}],
+            inferenceConfig={"maxTokens": 1024},
+        )
+        return "".join(c.get("text", "") for c in resp["output"]["message"]["content"]), f"bedrock:{model}"
     from openai import OpenAI
 
     model = os.environ.get("LLM_MODEL", "gpt-4.1")

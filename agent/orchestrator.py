@@ -39,13 +39,18 @@ def _comparison_image(before: str, after: str, out: Path, label_b: str, label_a:
     except ImportError:
         return None
     a, b = Image.open(before), Image.open(after)
-    h = max(a.height, b.height) + 40
+    try:
+        from PIL import ImageFont
+        font = ImageFont.load_default(size=30)
+    except Exception:
+        font = None
+    h = max(a.height, b.height) + 60
     canvas = Image.new("RGB", (a.width + b.width + 20, h), "white")
-    canvas.paste(a, (0, 40))
-    canvas.paste(b, (a.width + 20, 40))
+    canvas.paste(a, (0, 60))
+    canvas.paste(b, (a.width + 20, 60))
     d = ImageDraw.Draw(canvas)
-    d.text((10, 12), label_b, fill=(200, 30, 30))
-    d.text((a.width + 30, 12), label_a, fill=(20, 140, 60))
+    d.text((16, 14), label_b, fill=(200, 30, 30), font=font)
+    d.text((a.width + 36, 14), label_a, fill=(20, 140, 60), font=font)
     canvas.save(out)
     return str(out.relative_to(ROOT))
 
@@ -64,7 +69,11 @@ def run(keep_sandbox: bool = False) -> RunReport:
         "auto_merge": False,
         "patch_status": "not_proposed",
     }
-    tracing = obs.init()
+    try:
+        tracing = obs.init()
+    except Exception as e:  # tracing must never block the QA loop
+        tracing = False
+        rep.errors.append(f"tracing disabled: {e}")
     log("init", f"browser={rep.browser_provider} tracing={'arize' if tracing else 'off'} run_id={rep.run_id}")
 
     def timed(name):

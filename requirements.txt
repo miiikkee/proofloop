@@ -10,3 +10,5 @@ pytest
 arize-otel
 openinference-instrumentation-openai
 openinference-instrumentation-anthropic
+boto3
+openinference-instrumentation-bedrock

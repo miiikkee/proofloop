@@ -16,7 +16,7 @@ MAX_ATTEMPTS = 2
 
 _SECRET_PATTERNS = [
     re.compile(r"(?i)(api[_-]?key|secret|password|token)\s*[:=]"),
-    re.compile(r"\b(sk-[A-Za-z0-9]{10,}|dtn_[A-Za-z0-9]{10,}|gh[pousr]_[A-Za-z0-9]{10,})"),
+    re.compile(r"\b(sk-[A-Za-z0-9]{10,}|dtn_[A-Za-z0-9]{10,}|gh[pousr]_[A-Za-z0-9]{10,}|AKIA[A-Z0-9]{12,}|ASIA[A-Z0-9]{12,})"),
 ]
 _FORBIDDEN_MARKUP = re.compile(r"(?i)<\s*script|javascript:|on\w+\s*=|<\s*iframe|https?://")
 

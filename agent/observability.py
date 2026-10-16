@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import os
+
+os.environ.setdefault("GRPC_VERBOSITY", "ERROR")
 from contextlib import contextmanager
 
 _tracer = None
@@ -12,12 +14,13 @@ def init() -> bool:
     global _tracer
     if not (os.environ.get("ARIZE_API_KEY") and os.environ.get("ARIZE_SPACE_ID")):
         return False
-    from arize.otel import Transport, register
+    from arize.otel import register
 
     tp = register(space_id=os.environ["ARIZE_SPACE_ID"], api_key=os.environ["ARIZE_API_KEY"],
-                  project_name=PROJECT, transport=Transport.HTTPS, verbose=False)
+                  project_name=PROJECT, verbose=False)
     for mod, cls in (("openinference.instrumentation.openai", "OpenAIInstrumentor"),
-                     ("openinference.instrumentation.anthropic", "AnthropicInstrumentor")):
+                     ("openinference.instrumentation.anthropic", "AnthropicInstrumentor"),
+                     ("openinference.instrumentation.bedrock", "BedrockInstrumentor")):
         try:
             getattr(__import__(mod, fromlist=[cls]), cls)().instrument(tracer_provider=tp)
         except Exception:
