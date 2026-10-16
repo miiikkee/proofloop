@@ -1,0 +1,12 @@
+daytona
+anchorbrowser
+playwright
+flask==3.0.3
+python-dotenv
+anthropic
+openai
+pillow
+pytest
+arize-otel
+openinference-instrumentation-openai
+openinference-instrumentation-anthropic
