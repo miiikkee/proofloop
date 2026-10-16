@@ -12,10 +12,10 @@ def init() -> bool:
     global _tracer
     if not (os.environ.get("ARIZE_API_KEY") and os.environ.get("ARIZE_SPACE_ID")):
         return False
-    from arize.otel import register
+    from arize.otel import Transport, register
 
     tp = register(space_id=os.environ["ARIZE_SPACE_ID"], api_key=os.environ["ARIZE_API_KEY"],
-                  project_name=PROJECT, verbose=False)
+                  project_name=PROJECT, transport=Transport.HTTPS, verbose=False)
     for mod, cls in (("openinference.instrumentation.openai", "OpenAIInstrumentor"),
                      ("openinference.instrumentation.anthropic", "AnthropicInstrumentor")):
         try:
