@@ -82,6 +82,7 @@ class RunReport:
     proposals: list[dict] = field(default_factory=list)
     step_timings_ms: dict[str, int] = field(default_factory=dict)
     safety: dict[str, Any] = field(default_factory=dict)
+    memory: dict[str, Any] = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:

@@ -1,8 +1,8 @@
 {
-  "run_id": "20261016-141556-d26cc8",
+  "run_id": "20261016-142250-d7e110",
   "target_url": "https://<signed-preview>.daytonaproxy01.net",
   "candidate_url": "https://<signed-preview>.daytonaproxy01.net",
-  "issue_id": "contact-form-submit",
+  "issue_id": "contact-button",
   "browser_provider": "anchor",
   "llm_provider": "bedrock:us.anthropic.claude-sonnet-5-5",
   "baseline_passed": 2,
@@ -11,31 +11,31 @@
   "candidate_total": 3,
   "patch_attempts": 1,
   "verified_fix": true,
-  "total_runtime_ms": 38567,
+  "total_runtime_ms": 43332,
   "screenshot_before_path": "artifacts/baseline.png",
   "screenshot_after_path": "artifacts/candidate.png",
   "comparison_image_path": "artifacts/before_after.png",
   "patch_diff_path": "artifacts/patch.diff",
-  "sandbox_id": "75518ea4-88cd-4789-9c53-1c01ed00d356",
+  "sandbox_id": "0b2a5aaf-670d-4343-a110-5b4c6bc56826",
   "trace_url": "https://app.arize.com (project: proofloop)",
   "baseline_checks": [
     {
       "name": "homepage_heading",
       "passed": true,
       "detail": "heading='Acme Studio'",
-      "duration_ms": 573
+      "duration_ms": 562
     },
     {
       "name": "contact_page_reachable",
       "passed": true,
       "detail": "path=/contact",
-      "duration_ms": 1103
+      "duration_ms": 1337
     },
     {
       "name": "contact_submit_thank_you",
       "passed": false,
-      "detail": "TimeoutError: Page.wait_for_selector: Timeout 5000ms exceeded. | page_path_after_click=/contact | visible_h1='Contact us'",
-      "duration_ms": 6385
+      "detail": "TimeoutError: Page.wait_for_selector: Timeout 5000ms exceeded. | page_path_at_failure=/contact | visible_h1='Contact us'",
+      "duration_ms": 7255
     }
   ],
   "candidate_checks": [
@@ -43,19 +43,19 @@
       "name": "homepage_heading",
       "passed": true,
       "detail": "heading='Acme Studio'",
-      "duration_ms": 585
+      "duration_ms": 596
     },
     {
       "name": "contact_page_reachable",
       "passed": true,
       "detail": "path=/contact",
-      "duration_ms": 1647
+      "duration_ms": 1287
     },
     {
       "name": "contact_submit_thank_you",
       "passed": true,
       "detail": "confirmation visible",
-      "duration_ms": 2035
+      "duration_ms": 1862
     }
   ],
   "sandbox_checks": [
@@ -63,26 +63,26 @@
       "name": "py_compile",
       "passed": true,
       "detail": "",
-      "duration_ms": 158
+      "duration_ms": 81
     },
     {
       "name": "flask_routes",
       "passed": true,
       "detail": "routes ok",
-      "duration_ms": 355
+      "duration_ms": 236
     },
     {
       "name": "templates_render",
       "passed": true,
       "detail": "templates ok",
-      "duration_ms": 302
+      "duration_ms": 926
     }
   ],
   "proposals": [
     {
       "attempt": 1,
       "proposal": {
-        "root_cause": "The Send button in contact.html is declared with type=\"button\", so clicking it never submits the form. The page stays on /contact and the POST handler that renders the 'Thank you' page is never called.",
+        "root_cause": "The Send button in contact.html has type=\"button\", so clicking it never submits the form. The POST to /contact never happens, the page stays on /contact, and the 'Thank you' text never appears.",
         "file_path": "fixture_site/templates/contact.html",
         "find_text": "<button id=\"send\" type=\"button\">",
         "replace_text": "<button id=\"send\" type=\"submit\">",
@@ -93,12 +93,12 @@
     }
   ],
   "step_timings_ms": {
-    "provision": 8191,
-    "detect": 12205,
-    "diagnose": 2613,
-    "patch": 329,
-    "test": 817,
-    "verify": 12348
+    "provision": 4551,
+    "detect": 13624,
+    "diagnose": 2303,
+    "patch": 274,
+    "test": 1245,
+    "verify": 8210
   },
   "safety": {
     "allowed_files": [
@@ -112,6 +112,11 @@
     "production_writes": 0,
     "auto_merge": false,
     "patch_status": "verified_awaiting_human_approval"
+  },
+  "memory": {
+    "enabled": false,
+    "recalled": [],
+    "written": []
   },
   "errors": []
 }

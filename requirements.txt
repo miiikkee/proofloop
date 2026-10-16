@@ -1,3 +1,4 @@
+--pre
 daytona
 anchorbrowser
 playwright
@@ -12,3 +13,4 @@ openinference-instrumentation-openai
 openinference-instrumentation-anthropic
 boto3
 openinference-instrumentation-bedrock
+surrealdb[memory]

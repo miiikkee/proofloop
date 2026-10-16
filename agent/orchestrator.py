@@ -10,6 +10,7 @@ from pathlib import Path
 
 from agent import observability as obs
 from agent.browser import default_provider, run_checks
+from agent.memory import FixMemory
 from agent.diagnose import propose_patch, provider as llm_provider
 from agent.repair import BASELINE_PORT, CANDIDATE_PORT, SandboxRig
 from agent.repair import FIXTURE_FILES
@@ -135,6 +136,35 @@ def run(keep_sandbox: bool = False, scenario: str = DEFAULT, art: Path = ART) ->
             readonly = {p: rig.read("baseline", p) for p in READONLY_CONTEXT}
             prior: list[str] = []
 
+            # Recall earlier verified / failed fixes for similar symptoms (SurrealDB Agent Memory).
+            mem = FixMemory()
+            hints: list[dict] = []
+            rep.memory = {"enabled": mem.enabled, "recalled": [], "written": []}
+            symptom = "; ".join(c.detail.split(" | ", 1)[-1] for c in failing)
+            if mem.enabled:
+                with timed("memory_recall"), obs.span("memory.recall", kind="RETRIEVER") as s:
+                    try:
+                        hints = mem.recall([c.__dict__ for c in failing])
+                        rep.memory["recalled"] = hints
+                        obs.set_attrs(s, hits=len(hints))
+                    except Exception as e:
+                        rep.errors.append(f"memory recall failed: {e}")
+                log("memory", f"SurrealDB recalled {len(hints)} prior outcome(s)"
+                    + (f"; top: {hints[0]['text'][:120]!r}" if hints else ""))
+
+            def remember(outcome: str, proposal_dict: dict | None, candidate: str = "-") -> None:
+                if not mem.enabled:
+                    return
+                with timed("memory_write"), obs.span("memory.remember", kind="TOOL", outcome=outcome):
+                    try:
+                        mid = mem.remember_outcome(
+                            run_id=rep.run_id, scenario=scenario, failing_checks=[c.name for c in failing],
+                            symptom=symptom, proposal=proposal_dict, outcome=outcome, candidate=candidate)
+                        rep.memory["written"].append({"id": mid, "outcome": outcome})
+                        log("memory", f"SurrealDB stored outcome={outcome}")
+                    except Exception as e:
+                        rep.errors.append(f"memory write failed: {e}")
+
             for attempt in range(1, MAX_ATTEMPTS + 1):
                 rep.patch_attempts = attempt
                 record: dict = {"attempt": attempt}
@@ -142,7 +172,7 @@ def run(keep_sandbox: bool = False, scenario: str = DEFAULT, art: Path = ART) ->
                 # 3. Diagnose.
                 with timed("diagnose"), obs.span("diagnose", kind="LLM", attempt=attempt) as s:
                     try:
-                        proposal, model = propose_patch(evidence, editable, readonly, prior)
+                        proposal, model = propose_patch(evidence, editable, readonly, prior, hints)
                     except Exception as e:
                         record["error"] = f"diagnose failed: {e}"
                         prior.append(record["error"])
@@ -166,6 +196,7 @@ def run(keep_sandbox: bool = False, scenario: str = DEFAULT, art: Path = ART) ->
                         prior.append(f"{json.dumps(proposal.__dict__)} was REJECTED by safety gate: {e}")
                         obs.set_attrs(s, rejected=str(e))
                         log("patch", f"REJECTED: {e}")
+                        remember("rejected", proposal.__dict__)
                         continue
                     for p, text in editable.items():  # reset candidate to baseline, then apply
                         rig.write("candidate", p, text)
@@ -186,6 +217,7 @@ def run(keep_sandbox: bool = False, scenario: str = DEFAULT, art: Path = ART) ->
                 log("test", " ".join(f"{c['name']}={'ok' if c['passed'] else 'FAIL'}" for c in rep.sandbox_checks))
                 if not ok:
                     prior.append(f"{json.dumps(proposal.__dict__)} broke sandbox checks: {rep.sandbox_checks}")
+                    remember("sandbox_failed", proposal.__dict__)
                     continue
 
                 # 6. Independent browser verification of the candidate preview.
@@ -208,7 +240,9 @@ def run(keep_sandbox: bool = False, scenario: str = DEFAULT, art: Path = ART) ->
                 log("verify", f"candidate {after.passed}/{after.total} via {after.provider}")
                 if after.passed == after.total:
                     rep.verified_fix = True
+                    remember("verified", proposal.__dict__, f"{after.passed}/{after.total}")
                     break
+                remember("browser_failed", proposal.__dict__, f"{after.passed}/{after.total}")
                 prior.append(f"{json.dumps(proposal.__dict__)} applied but browser still failed: "
                              f"{[c.detail for c in after.checks if not c.passed]}")
 
