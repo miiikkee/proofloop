@@ -1,5 +1,5 @@
 {
-  "run_id": "20261016-141949-ebee26",
+  "run_id": "20261016-143051-c51304",
   "target_url": "https://<signed-preview>.daytonaproxy01.net",
   "candidate_url": "https://<signed-preview>.daytonaproxy01.net",
   "issue_id": "wrong-form-action",
@@ -11,31 +11,31 @@
   "candidate_total": 3,
   "patch_attempts": 1,
   "verified_fix": true,
-  "total_runtime_ms": 28974,
+  "total_runtime_ms": 42455,
   "screenshot_before_path": "artifacts/suite/wrong-form-action/baseline.png",
   "screenshot_after_path": "artifacts/suite/wrong-form-action/candidate.png",
   "comparison_image_path": "artifacts/suite/wrong-form-action/before_after.png",
   "patch_diff_path": "artifacts/suite/wrong-form-action/patch.diff",
-  "sandbox_id": "05bf4bf6-e448-486c-80e7-5b3aa96b4cbe",
+  "sandbox_id": "173d216f-797e-4c25-98d1-3bffd605e4a2",
   "trace_url": "https://app.arize.com (project: proofloop)",
   "baseline_checks": [
     {
       "name": "homepage_heading",
       "passed": true,
       "detail": "heading='Acme Studio'",
-      "duration_ms": 428
+      "duration_ms": 423
     },
     {
       "name": "contact_page_reachable",
       "passed": true,
       "detail": "path=/contact",
-      "duration_ms": 1219
+      "duration_ms": 1002
     },
     {
       "name": "contact_submit_thank_you",
       "passed": false,
       "detail": "TimeoutError: Page.wait_for_selector: Timeout 5000ms exceeded. | page_path_at_failure=/send-message | visible_h1='Not Found'",
-      "duration_ms": 6487
+      "duration_ms": 6511
     }
   ],
   "candidate_checks": [
@@ -43,19 +43,19 @@
       "name": "homepage_heading",
       "passed": true,
       "detail": "heading='Acme Studio'",
-      "duration_ms": 475
+      "duration_ms": 463
     },
     {
       "name": "contact_page_reachable",
       "passed": true,
       "detail": "path=/contact",
-      "duration_ms": 1192
+      "duration_ms": 1072
     },
     {
       "name": "contact_submit_thank_you",
       "passed": true,
       "detail": "confirmation visible",
-      "duration_ms": 1768
+      "duration_ms": 1788
     }
   ],
   "sandbox_checks": [
@@ -63,42 +63,44 @@
       "name": "py_compile",
       "passed": true,
       "detail": "",
-      "duration_ms": 101
+      "duration_ms": 105
     },
     {
       "name": "flask_routes",
       "passed": true,
       "detail": "routes ok",
-      "duration_ms": 412
+      "duration_ms": 377
     },
     {
       "name": "templates_render",
       "passed": true,
       "detail": "templates ok",
-      "duration_ms": 354
+      "duration_ms": 337
     }
   ],
   "proposals": [
     {
       "attempt": 1,
       "proposal": {
-        "root_cause": "The contact form posts to /send-message, but the Flask app only defines POST /contact. The request returns 404 'Not Found', so the thank-you page never renders.",
+        "root_cause": "The contact form in contact.html posts to /send-message, but the Flask app only defines POST /contact. Submitting the form therefore lands on a 404 'Not Found' page and the 'Thank you' text never appears.",
         "file_path": "fixture_site/templates/contact.html",
         "find_text": "action=\"/send-message\"",
         "replace_text": "action=\"/contact\"",
-        "reason": "Pointing the form action at the existing POST /contact route lets the submission reach contact_submit, which renders success.html with 'Thank you'.",
+        "reason": "Pointing the form action at the existing POST /contact route renders success.html with 'Thank you'. app.py is read-only, so the template must be fixed. The button type is already submit and the homepage link is already correct.",
         "confidence": 0.97
       },
       "diff": "--- a/fixture_site/templates/contact.html\n+++ b/fixture_site/templates/contact.html\n@@ -5,7 +5,7 @@\n </head>\n <body>\n   <h1>Contact us</h1>\n-  <form id=\"contact-form\" method=\"post\" action=\"/send-message\">\n+  <form id=\"contact-form\" method=\"post\" action=\"/contact\">\n     <label for=\"name\">Name</label>\n     <input id=\"name\" name=\"name\" required>\n     <label for=\"email\">Email</label>\n"
     }
   ],
   "step_timings_ms": {
-    "provision": 4478,
-    "detect": 11969,
-    "diagnose": 2240,
-    "patch": 184,
-    "test": 869,
-    "verify": 8174
+    "provision": 4831,
+    "detect": 12587,
+    "memory_recall": 3178,
+    "diagnose": 2732,
+    "patch": 408,
+    "test": 820,
+    "verify": 8812,
+    "memory_write": 8075
   },
   "safety": {
     "allowed_files": [
@@ -112,6 +114,35 @@
     "production_writes": 0,
     "auto_merge": false,
     "patch_status": "verified_awaiting_human_approval"
+  },
+  "memory": {
+    "enabled": true,
+    "recalled": [
+      {
+        "id": "memory_chunk:aasw4ad4x2fe93xqcuqt",
+        "score": 0.38,
+        "source": "memory_chunk",
+        "text": "ProofLoop VERIFIED FIX (run 20261016-142901-010fc5). Failing check(s) contact_submit_thank_you with symptom: page_path_at_failure=/contact | visible_h1='Contact us'. Root cause: The Send button in contact.html has type=\"button\", so clicking it never submits the form. The POST to /contact never happens, the success page with 'Thank you' is never rendered, and the test times out on /contact. Fix that worked: in fixture_site/templates/contact.html replace '<button id=\"send\" type=\"button\">' with '<button id=\"send\" type=\"submit\">'. Independently verified in a cloud browser: candidate 3/3 checks pas"
+      },
+      {
+        "id": "memory_chunk:lcfiypq2ooaq5k48nhm6",
+        "score": 0.374,
+        "source": "memory_chunk",
+        "text": "ProofLoop VERIFIED FIX (run 20261016-142953-921c48). Failing check(s) contact_page_reachable with symptom: page_path_at_failure=/contact-us | visible_h1='Not Found'. Root cause: The homepage CTA #contact-link points to /contact-us, but the Flask app only defines the route /contact. Clicking the link lands on a 404 'Not Found' page, so form#contact-form never appears. The memory hint concerns a different bug (button type), and contact.html already has type=\"submit\". Fix that worked: in fixture_site/templates/index.html replace 'href=\"/contact-us\"' with 'href=\"/contact\"'. Independently verified "
+      },
+      {
+        "id": "entity:['other', 'contact_submit_thank_you']",
+        "score": 0.12,
+        "source": "entity",
+        "text": "contact_submit_thank_you"
+      }
+    ],
+    "written": [
+      {
+        "id": "a2jqsss9lntrxj8rdik1",
+        "outcome": "verified"
+      }
+    ]
   },
   "errors": []
 }

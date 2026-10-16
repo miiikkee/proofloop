@@ -22,7 +22,8 @@ CLI (python app.py)
   │                 no scripts / handlers / external URLs / credentials
   ├─ Patch candidate copy only → fixed sandbox checks (py_compile, Flask routes)
   ├─ Anchor re-verifies candidate preview
-  ├─ Arize AX traces: provision · detect · diagnose · patch · test · verify
+  ├─ SurrealDB Agent Memory: recall prior fix outcomes → store verified / failed fixes
+  ├─ Arize AX traces: provision · detect · memory · diagnose · patch · test · verify
   └─ artifacts/run_report.json, patch.diff, baseline.png, candidate.png, before_after.png
 ```
 
@@ -34,6 +35,7 @@ CLI (python app.py)
 | Patch | `agent/safety.py` | Proposal is validated, then written to the **candidate** copy only |
 | Test | Daytona `process.exec` | Developer-defined commands only (no model-generated shell) |
 | Verify | **Anchor Browser** | Same 3 checks, fresh session, against the candidate preview |
+| Remember | **SurrealDB Agent Memory** | Recall earlier verified or failed fixes for similar symptoms; store each outcome as a labeled, traceable fact |
 | Observe | **Arize AX** (OpenTelemetry / OpenInference) | Span per step with pass counts, root cause, confidence |
 
 ## The demo bug
@@ -83,6 +85,16 @@ Three different injected bugs, each in a fresh Daytona sandbox, verified by Anch
 
 **Suite result: 3/3 scenarios verified fixed**, each on the first attempt, with the baseline copy unmodified. Per-scenario reports, diffs and screenshots: `artifacts/suite/<scenario>/`; summary: `artifacts/suite/suite_summary.json`.
 
+### SurrealDB Agent Memory (verified fixes that persist across runs)
+
+Before diagnosing, ProofLoop recalls earlier outcomes for similar symptoms from **SurrealDB Agent Memory**. After verification, it stores the outcome as a labeled fact (`app=proofloop`, `kind=verified_fix|failed_fix`, `scenario=…`, `check=…`, `run=…`). Failed or rejected edits are stored as "do not repeat" facts, and a verified fix is stored as superseding earlier failed attempts for the same symptom. Every recalled hit carries its source and run id, so a hint can be traced to the run that produced it.
+
+Memory is a hint, never an authority. Recalled text goes to the model inside `<memory_hints>` as untrusted data. Every proposal still passes the safety gate, and only the browser decides pass/fail.
+
+Measured on 2026-10-16 (real runs):
+- **Suite pass 1** (empty memory): 0 → 1 → 3 hits recalled as the suite progressed; 3/3 fixes verified and stored. On `broken-nav-link` the model correctly ignored a non-matching hint: *"The memory hint concerns a different bug (button type)…"*
+- **Pass 2** (`contact-button` again): 5 hits recalled. The top hit (score 0.38) was the earlier verified fix for the same symptom (`page_path_at_failure=/contact`), traceable to run `20261016-142901-010fc5`. Fix verified 3/3 again. Recall took 2.9 s and the write took 7.3 s.
+
 These are results for 3 acceptance checks × 3 scenarios on one demo site, not an accuracy benchmark. Full record: `artifacts/run_report.json`.
 
 
@@ -102,7 +114,7 @@ These are results for 3 acceptance checks × 3 scenarios on one demo site, not a
 ```bash
 pip install -r requirements.txt
 python -m playwright install chromium
-cp .env.example .env    # fill DAYTONA_API_KEY, ANCHOR_API_KEY, LLM credentials (AWS Bedrock, Anthropic or OpenAI), optional ARIZE_*
+cp .env.example .env    # fill DAYTONA_API_KEY, ANCHOR_API_KEY, LLM credentials (AWS Bedrock, Anthropic or OpenAI), optional ARIZE_* and SURREAL_MEMORY_*
 python -m pytest -q tests/test_safety.py
 python app.py                   # full loop on the default bug; --keep-sandbox keeps previews up
 python app.py --scenario all    # 3 injected-bug scenarios, each in a fresh sandbox
@@ -125,4 +137,4 @@ Without `ANCHOR_API_KEY` the browser step falls back to local Playwright, and th
 
 ## Next steps
 
-CI integration (run on every preview deploy), multi-file patches with review UI, SurrealDB memory of verified fixes so repeat bugs are recognized faster.
+CI integration (run on every preview deploy), multi-file patches with a review UI, and memory shared across teams' sites.

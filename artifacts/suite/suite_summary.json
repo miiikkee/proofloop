@@ -7,8 +7,8 @@
     "attempts": 1,
     "verified_fix": true,
     "baseline_modified": false,
-    "runtime_s": 34.0,
-    "root_cause": "The Send button in contact.html is declared with type=\"button\", so clicking it never submits the form. The POST to /contact never happens, the page stays on /contact, and the 'Thank you' text never appears.",
+    "runtime_s": 52.0,
+    "root_cause": "The Send button in contact.html has type=\"button\", so clicking it never submits the form. The POST to /contact never happens, the success page with 'Thank you' is never rendered, and the test times out on /contact.",
     "errors": []
   },
   {
@@ -19,8 +19,8 @@
     "attempts": 1,
     "verified_fix": true,
     "baseline_modified": false,
-    "runtime_s": 34.1,
-    "root_cause": "The homepage 'Contact us' link (#contact-link) points to /contact-us, but the Flask app only defines a GET route at /contact, so the click lands on a 404 'Not Found' page.",
+    "runtime_s": 57.5,
+    "root_cause": "The homepage CTA #contact-link points to /contact-us, but the Flask app only defines the route /contact. Clicking the link lands on a 404 'Not Found' page, so form#contact-form never appears. The memory hint concerns a different bug (button type), and contact.html already has type=\"submit\".",
     "errors": []
   },
   {
@@ -31,8 +31,8 @@
     "attempts": 1,
     "verified_fix": true,
     "baseline_modified": false,
-    "runtime_s": 29.0,
-    "root_cause": "The contact form posts to /send-message, but the Flask app only defines POST /contact. The request returns 404 'Not Found', so the thank-you page never renders.",
+    "runtime_s": 42.5,
+    "root_cause": "The contact form in contact.html posts to /send-message, but the Flask app only defines POST /contact. Submitting the form therefore lands on a 404 'Not Found' page and the 'Thank you' text never appears.",
     "errors": []
   }
 ]

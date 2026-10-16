@@ -16,7 +16,8 @@ Teams find broken web flows after customers complain. AI coding agents can propo
 4. **Gate and patch**: a deterministic safety gate enforces an exact file allowlist, requires `find_text` to occur exactly once, caps the edit size, and blocks scripts, event handlers, external URLs and credential-like strings. The patch goes to the candidate copy only.
 5. **Test**: Daytona runs developer-defined checks (py_compile, Flask route tests). Model-generated shell commands are never executed.
 6. **Verify**: a fresh Anchor session runs the same 3 checks against the candidate preview. Result: 3/3.
-7. **Report**: run_report.json, patch diff, before/after screenshots and per-step timings. Each step is traced to Arize AX via OpenTelemetry/OpenInference, and the traces were confirmed in the Arize UI (project `proofloop`).
+7. **Remember**: SurrealDB Agent Memory stores verified and failed fix outcomes as labeled facts and recalls them on the next run.
+8. **Report**: run_report.json, patch diff, before/after screenshots and per-step timings. Each step is traced to Arize AX via OpenTelemetry/OpenInference, and the traces were confirmed in the Arize UI (project `proofloop`).
 
 ## Measured results (3 consecutive real runs)
 | Run | Baseline | Candidate | Attempts | Runtime |
@@ -33,6 +34,7 @@ These are 3 acceptance checks × 3 scenarios on one controlled demo site, not an
 - **Daytona**: ephemeral sandbox, two isolated copies (baseline and candidate), fixed-command execution, signed and expiring preview URLs that make the sandboxed sites reachable by a cloud browser, and automatic deletion after the run.
 - **Anchor Browser**: the cloud Chromium that reproduces the failure and independently verifies the fix. A cloud browser cannot reach laptop localhost, so Daytona previews and Anchor are paired by design.
 - **Arize AX**: OpenTelemetry/OpenInference spans for provision, detect, diagnose, patch, test and verify. Each span carries pass counts, root cause and confidence.
+- **SurrealDB Agent Memory**: before diagnosing, ProofLoop recalls earlier verified or failed fixes for similar symptoms. After verifying, it stores the outcome as a labeled, traceable fact; verified fixes supersede failed attempts, and failed edits are stored as "do not repeat". In real runs, a repeat of the same bug recalled its earlier verified fix as the top hit (traceable to the run id). On a different bug, the model explicitly ignored a non-matching hint. Memory is a hint only: the safety gate and the browser still decide.
 - **AWS (Amazon Bedrock)**: Claude Sonnet 5.5 via the Bedrock Converse API, running under the event lab account.
 
 ## Safety
@@ -42,7 +44,7 @@ Exact file allowlist · find_text must match exactly once · 300-character edit 
 One demo site with three controlled single-bug scenarios (button type, nav link, form action). Single-file find/replace patches only. Screenshots are saved as evidence but not sent to the model.
 
 ## What's next
-Run on every preview deploy in CI, support multi-file patches with a review UI, and use SurrealDB agent memory to recall verified fixes for repeat bugs.
+Run on every preview deploy in CI, support multi-file patches with a review UI, and share fix memory across teams' sites.
 
 ## Links
 - Source: https://github.com/miiikkee/proofloop

@@ -22,7 +22,7 @@ class FixMemory:
                 context=os.environ.get("SURREAL_MEMORY_CONTEXT", "proofloop"),
                 endpoint=os.environ["SURREAL_MEMORY_ENDPOINT"],
                 api_key=os.environ["SURREAL_MEMORY_API_KEY"],
-                timeout=20.0,
+                timeout=60.0,
             )
 
     @property
