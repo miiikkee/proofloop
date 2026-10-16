@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ProofLoop Flow</title>
+<style>
+  :root{
+    --bg:#ffffff; --ink:#16181d; --muted:#5b6170; --line:#c9ced8;
+    --daytona:#1f6feb; --anchor:#0f9d75; --llm:#8a4bd6; --gate:#d9480f; --surreal:#c2255c; --arize:#5c6ac4;
+    --ok:#2b8a3e; --bad:#c92a2a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+  .page{width:1400px;padding:36px 44px 40px}
+  h1{margin:0;font-size:30px;letter-spacing:-.3px}
+  .tag{color:var(--muted);margin:4px 0 22px;font-size:16px}
+  .wrap{display:grid;grid-template-columns:1fr 250px;gap:22px}
+  .flow{position:relative}
+  .row{display:flex;align-items:stretch;gap:14px}
+  .step{flex:1;border:1.5px solid var(--line);border-left:6px solid var(--c);border-radius:10px;padding:10px 14px;background:#fff}
+  .step .h{display:flex;align-items:center;gap:10px;font-weight:650;font-size:16px}
+  .num{width:24px;height:24px;border-radius:50%;background:var(--c);color:#fff;font-size:13px;display:grid;place-items:center;flex:none}
+  .tool{margin-left:auto;font-size:12px;font-weight:650;color:var(--c);border:1.5px solid var(--c);border-radius:999px;padding:1px 9px}
+  .step p{margin:4px 0 0 34px;color:var(--muted);font-size:13.5px}
+  .step code{font:12.5px ui-monospace,Menlo,monospace;background:#f2f4f8;padding:1px 5px;border-radius:4px;color:var(--ink)}
+  .arrow{height:22px;display:flex;justify-content:center}
+  .arrow svg{display:block}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .side{border:1.5px dashed var(--c);border-radius:10px;padding:10px 14px;background:color-mix(in srgb,var(--c) 6%,#fff);font-size:13.5px}
+  .side b{color:var(--c)}
+  .pill{display:inline-block;font-weight:700;border-radius:6px;padding:0 7px;color:#fff;font-size:13px}
+  .ok{background:var(--ok)} .bad{background:var(--bad)}
+  .rail{border:1.5px solid var(--arize);border-radius:12px;padding:14px;background:color-mix(in srgb,var(--arize) 6%,#fff)}
+  .rail h3{margin:0 0 6px;color:var(--arize);font-size:16px}
+  .rail ul{margin:0;padding-left:18px;color:var(--muted);font-size:13.5px}
+  .rail li{margin:2px 0}
+  .box{border:1.5px solid var(--line);border-radius:12px;padding:14px;margin-top:16px}
+  .box h3{margin:0 0 8px;font-size:16px}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  td,th{padding:4px 2px;text-align:left;border-bottom:1px solid #eceef2}
+  th{color:var(--muted);font-weight:600}
+  .rules{font-size:13px;color:var(--muted);margin:0;padding-left:18px}
+  .rules li{margin:2px 0}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:18px;font-size:12.5px;color:var(--muted)}
+  .legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--c);margin-right:6px;vertical-align:-1px}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>ProofLoop: find it, fix it, prove it</h1>
+  <div class="tag">A fix is accepted only on independent browser evidence, never on the model's confidence.</div>
+
+  <div class="wrap">
+    <div class="flow">
+
+      <div class="row"><div class="step" style="--c:#16181d">
+        <div class="h"><span class="num">0</span>Operator runs <code>python app.py --scenario all</code><span class="tool">CLI</span></div>
+        <p>Orchestrator state machine with safety gates, max 2 attempts, per-step timeouts</p>
+      </div></div>
+      <div class="arrow"><svg width="16" height="22"><path d="M8 0v15" stroke="#9aa1ad" stroke-width="2"/><path d="M2 13l6 8 6-8z" fill="#9aa1ad"/></svg></div>
+
+      <div class="row"><div class="step" style="--c:var(--daytona)">
+        <div class="h"><span class="num">1</span>Provision isolated sandbox<span class="tool">Daytona</span></div>
+        <p>Ephemeral sandbox · <b>baseline copy</b> <code>:3000</code> and <b>candidate copy</b> <code>:3001</code>, kept separate · each behind a signed, expiring preview URL</p>
+      </div></div>
+      <div class="arrow"><svg width="16" height="22"><path d="M8 0v15" stroke="#9aa1ad" stroke-width="2"/><path d="M2 13l6 8 6-8z" fill="#9aa1ad"/></svg></div>
+
+      <div class="row"><div class="step" style="--c:var(--anchor)">
+        <div class="h"><span class="num">2</span>Detect: run 3 fixed acceptance checks on baseline<span class="tool">Anchor Browser</span></div>
+        <p>Cloud Chromium via Playwright-over-CDP · homepage · contact page · submit shows "Thank you" → <span class="pill bad">2/3</span> + screenshot + failure evidence</p>
+      </div></div>
+      <div class="arrow"><svg width="16" height="22"><path d="M8 0v15" stroke="#9aa1ad" stroke-width="2"/><path d="M2 13l6 8 6-8z" fill="#9aa1ad"/></svg></div>
+
+      <div class="row"><div class="step" style="--c:var(--surreal)">
+        <div class="h"><span class="num">3</span>Recall prior outcomes for this symptom<span class="tool">SurrealDB Agent Memory</span></div>
+        <p>Verified and failed fixes from earlier runs, each traceable to its run id · passed to the model as <i>untrusted hints</i></p>
+      </div></div>
+      <div class="arrow"><svg width="16" height="22"><path d="M8 0v15" stroke="#9aa1ad" stroke-width="2"/><path d="M2 13l6 8 6-8z" fill="#9aa1ad"/></svg></div>
+
+      <div class="row"><div class="step" style="--c:var(--llm)">
+        <div class="h"><span class="num">4</span>Diagnose and propose a patch<span class="tool">Claude Sonnet 5.5 · AWS Bedrock</span></div>
+        <p>Input: browser evidence + allowlisted templates + read-only backend · Output: JSON <code>{root_cause, file_path, find_text, replace_text, reason, confidence}</code></p>
+      </div></div>
+      <div class="arrow"><svg width="16" height="22"><path d="M8 0v15" stroke="#9aa1ad" stroke-width="2"/><path d="M2 13l6 8 6-8z" fill="#9aa1ad"/></svg></div>
+
+      <div class="row">
+        <div class="step" style="--c:var(--gate);flex:1.25">
+          <div class="h"><span class="num">5</span>Safety gate (deterministic, outside the LLM)<span class="tool">Code</span></div>
+          <p>Exact file allowlist · <code>find_text</code> occurs exactly once · ≤300 chars · no scripts, handlers, external URLs or secrets</p>
+        </div>
+        <div class="side" style="--c:var(--bad);flex:.75"><b>Rejected →</b> store as "do not repeat" in SurrealDB, feed the reason back, retry (attempt 2 of 2)</div>
+      </div>
+      <div class="arrow"><svg width="16" height="22"><path d="M8 0v15" stroke="#9aa1ad" stroke-width="2"/><path d="M2 13l6 8 6-8z" fill="#9aa1ad"/></svg></div>
+
+      <div class="row"><div class="step" style="--c:var(--daytona)">
+        <div class="h"><span class="num">6</span>Patch the candidate copy only and run fixed tests<span class="tool">Daytona</span></div>
+        <p>Baseline is never touched · developer-defined commands only (<code>py_compile</code>, Flask route tests) · no model-generated shell</p>
+      </div></div>
+      <div class="arrow"><svg width="16" height="22"><path d="M8 0v15" stroke="#9aa1ad" stroke-width="2"/><path d="M2 13l6 8 6-8z" fill="#9aa1ad"/></svg></div>
+
+      <div class="row"><div class="step" style="--c:var(--anchor)">
+        <div class="h"><span class="num">7</span>Verify independently on the candidate preview<span class="tool">Anchor Browser</span></div>
+        <p>Fresh cloud browser session · the same 3 checks, unchanged by the agent</p>
+      </div></div>
+      <div class="arrow"><svg width="16" height="22"><path d="M8 0v15" stroke="#9aa1ad" stroke-width="2"/><path d="M2 13l6 8 6-8z" fill="#9aa1ad"/></svg></div>
+
+      <div class="split">
+        <div class="side" style="--c:var(--ok)"><b>All 3 pass <span class="pill ok">3/3</span></b><br>Store a <b style="color:var(--surreal)">verified fix</b> in SurrealDB (supersedes failed attempts) → report, diff, before/after screenshots → status <code>verified_awaiting_human_approval</code>. No auto-merge, no deploy.</div>
+        <div class="side" style="--c:var(--bad)"><b>Still failing</b><br>Store as <b style="color:var(--surreal)">failed fix</b> → reset candidate to baseline → retry with failure context. After 2 attempts: <code>unverified_discarded</code>.</div>
+      </div>
+      <div class="arrow"><svg width="16" height="22"><path d="M8 0v15" stroke="#9aa1ad" stroke-width="2"/><path d="M2 13l6 8 6-8z" fill="#9aa1ad"/></svg></div>
+
+      <div class="row"><div class="step" style="--c:#16181d">
+        <div class="h"><span class="num">8</span>Cleanup and evidence<span class="tool">Report</span></div>
+        <p>Signed URLs expired · sandbox deleted · <code>run_report.json</code> with real pass counts, timings, <code>baseline_copy_modified=false</code></p>
+      </div></div>
+    </div>
+
+    <div>
+      <div class="rail">
+        <h3>Arize AX: traces every step</h3>
+        <ul>
+          <li>One trace per run via OpenTelemetry / OpenInference</li>
+          <li>Spans: provision · detect · memory.recall · diagnose · patch · test · verify · memory.remember</li>
+          <li>Bedrock LLM calls with token counts</li>
+          <li>Daytona SDK calls auto-traced</li>
+          <li>Run input/output and OK/ERROR status</li>
+        </ul>
+      </div>
+
+      <div class="box">
+        <h3>Measured (real runs, 16 Oct 2026)</h3>
+        <table>
+          <tr><th>Injected bug</th><th>Before</th><th>After</th></tr>
+          <tr><td>button type</td><td>2/3</td><td><b style="color:var(--ok)">3/3</b></td></tr>
+          <tr><td>nav link 404</td><td>2/3</td><td><b style="color:var(--ok)">3/3</b></td></tr>
+          <tr><td>form action 404</td><td>2/3</td><td><b style="color:var(--ok)">3/3</b></td></tr>
+        </table>
+        <p style="margin:8px 0 0;font-size:13px;color:var(--muted)">Fixed on the 1st attempt each time · ~30–45 s per run · 3 checks × 3 scenarios on one demo site; not a benchmark.</p>
+      </div>
+
+      <div class="box">
+        <h3>Guardrails</h3>
+        <ul class="rules">
+          <li>Baseline and candidate always separate</li>
+          <li>Checks written by the developer, never by the model</li>
+          <li>Memory is a hint, not an authority</li>
+          <li>Page text and memory treated as untrusted</li>
+          <li>Preview tokens redacted from logs</li>
+          <li>A person approves before any adoption</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span style="--c:var(--daytona)">Daytona</span>
+    <span style="--c:var(--anchor)">Anchor Browser</span>
+    <span style="--c:var(--surreal)">SurrealDB</span>
+    <span style="--c:var(--llm)">Claude on AWS Bedrock</span>
+    <span style="--c:var(--gate)">Safety gate</span>
+    <span style="--c:var(--arize)">Arize AX</span>
+  </div>
+</div>
+</body>
+</html>

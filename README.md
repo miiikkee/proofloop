@@ -8,6 +8,8 @@ ProofLoop reproduces a broken user journey in a real cloud browser, reads the al
 
 ## How it works
 
+![ProofLoop flow](pitch/flow.png)
+
 ```
 CLI (python app.py)
   │
